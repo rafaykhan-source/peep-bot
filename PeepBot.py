@@ -8,6 +8,7 @@ def configure():
 
 # reading in sample role spreadsheet
 df = pd.read_csv('sample.csv')
+print(df)
 
 # establishing intents
 intents = discord.Intents.all()
@@ -23,43 +24,50 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-  messager = message.author
-  server = messager.guild
-  
-  # bot shouldn't be processing its own messages
-  if messager == client.user:
+  server = message.author.guild
+  # ensuring that the messager isn't the bot itself
+  if message.author == client.user:
     return
     
-  # peep command
-  if message.content.startswith('peep'):
-    await message.channel.send('peep!')
+  # peep responds to messages containing peep
+  if 'peep' in message.content:
+    await message.channel.send("peep!")
+    print(message.content)
     return
   
   # person verification command
-  # !verifymembers : spreadsheet_role_name
-  # this function is currently broken
-  if message.content.startswith('!verifymembers'):
+  # !missing : spreadsheet_role_name
+  if message.content.startswith('!missing'):
+    # checking if messager is a server admin
+    if 'Admin' not in str(message.author.roles):
+      return
     input = message.content.split(' : ') 
     people = df[input[1]]
     members = server.members
     
+    found = []
     for person in people:
       for m in members:
-        if person in m.display_name: continue
-      await message.channel.send(f"{person} could not be found on the server")
+        if person in m.display_name: 
+          found.append(person)
+          break
+    
+    for person in people:
+      if person not in found:
+        await message.channel.send(f"{person} not found")
     return
   
   # autoassign roles command
   # !autoassign : spreadsheet_role_name : discord_server_role_name
   if message.content.startswith('!autoassign'):
     # checking if messager is a server admin
-    admin = discord.utils.get(server.roles, name='Admin')
-    if admin not in messager.roles:
+    if 'Admin' not in str(message.author.roles):
       return
     # converting input into a list of arguments
     input = message.content.split(" : ")
     # validating role argument
     role = discord.utils.get(server.roles, name=input[2])
+    print(role)
     if role == None:
       await message.channel.send("no such discord role exists")
       return
@@ -72,17 +80,17 @@ async def on_message(message):
     # storing server members and iterating over them
     members = server.members 
     for m in members:
-      name = m.display_name
+      name = str(m.display_name)
       if role in m.roles:
         await message.channel.send(f"{name} already has role {role}")
-      elif name in people:
+      elif name in list(people):
         await m.add_roles(role)
         if role in m.roles:
           await message.channel.send(f"assigned {role} to {name}")
         else:
           await message.channel.send(f"failed to assign {role} to {name}")
       else:
-        await message.channel.send(f"{name} has not been assigned {role}.")
+        await message.channel.send(f"{name} was not been assigned {role}.")
     await message.channel.send("Finished.")
     return
   
