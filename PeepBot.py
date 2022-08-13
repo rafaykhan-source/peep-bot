@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 import pandas as pd
 import discord
+from gcsa.google_calendar import GoogleCalendar
+import datetime as dt
 
 def configure():
   load_dotenv()
@@ -93,5 +95,16 @@ async def on_message(message):
     await message.channel.send("Finished.")
     return
   
+  if message.content.startswith("!cal"):
+    verify_admin(message.author)
+    start = dt.datetime.now()
+    end = dt.datetime.now().replace(hour=23, minute=59)
+    halps_cal = GoogleCalendar(credentials_path="credentials.json", calendar=os.getenv('calendar_id'))
+    events_today = "\nToday's HALPS are: "
+    for event in halps_cal[start:end:'startTime']:
+      events_today += "\n" + str(event.summary)
+    await message.channel.send(events_today)
+      
+    
 configure()
 client.run(os.getenv('peep'))
