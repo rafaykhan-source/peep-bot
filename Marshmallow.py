@@ -28,7 +28,7 @@ your server profile. There'll be a nickname field you can type in.
 # Commands
 @bot.command(pass_context=True)
 async def peep(ctx):
-    """PeepBot responds with peep!"""
+    """Marshmallow responds with peep!"""
     await ctx.send("peep!")
 
 @bot.command(pass_context=True)
@@ -60,12 +60,16 @@ async def autoassign(ctx, spreadsheet_role: str, discord_role: discord.Role, csv
         else:
           await m.add_roles(discord_role)
           await ctx.send(f"{m.display_name} was ASSIGNED {discord_role}")
-          found += 1
-          
-    await ctx.send(f"""Finished. 
-Found: {found}. 
-Not Found: {not_found}. 
-Already Had Role: {already}""")
+          found += 1 
+    await ctx.send(f"""
+```
+Done.
+Found: {found}
+Not Found: {not_found}
+Already Had Role: {already}
+People in the Discord: {len(ctx.guild.members)}
+```
+""")
 
 
 @bot.command(pass_context=True)
@@ -87,8 +91,13 @@ async def missing(ctx, column_name: str, csv_name: str):
             print(n)
             not_found += 1
         else: found += 1
-    await ctx.send(f"""Finished. 
-Found: {found}. 
-Not Found: {not_found}.""")
+    await ctx.send(f"""
+```
+Done.
+Found: {found}
+Not Found: {not_found}
+People in the Discord: {len(ctx.guild.members)}
+```
+""")
 
 bot.run(os.getenv('peep'))
