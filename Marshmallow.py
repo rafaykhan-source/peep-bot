@@ -9,7 +9,6 @@ intents = discord.Intents.all()
 # creating bot instance
 bot = commands.Bot(command_prefix='/', intents=intents)
 
-
 # logs whether bot has successfully connected
 @bot.event
 async def on_ready():
@@ -42,6 +41,8 @@ async def autoassign(ctx, spreadsheet_role: str, discord_role: discord.Role, csv
     df = pd.read_csv(csv_name)
     try:
         names = df[spreadsheet_role].astype("string")
+        names = names.dropna()
+        print(names)
     except:
         await ctx.send("no such spreadsheet column exists")
         return
@@ -79,6 +80,8 @@ async def missing(ctx, column_name: str, csv_name: str):
     df = pd.read_csv(csv_name)
     try:
         names = df[column_name].astype("string")
+        names = names.dropna()
+        print(names)
     except:
         await ctx.send("no such spreadsheet column exists")
         return
@@ -88,7 +91,7 @@ async def missing(ctx, column_name: str, csv_name: str):
         m = discord.utils.find(lambda m: n.lower() in m.display_name.lower(),
                                ctx.guild.members)
         if m == None: 
-            print(n)
+            await ctx.send(f"Not found: {n}")
             not_found += 1
         else: found += 1
     await ctx.send(f"""
@@ -99,5 +102,17 @@ Not Found: {not_found}
 People in the Discord: {len(ctx.guild.members)}
 ```
 """)
+    
+@bot.command(pass_context=True)
+@commands.has_any_role("SIFP Discord Admin", "Tech PAI-CA")
+async def assigngroups(ctx, csv_name: str):
+    df = pd.read_csv(csv_name)
+    
+    for col in df: 
+        await missing(ctx, col, csv_name)
+        r = discord.utils.find(lambda r: r.name == str(col), ctx.guild.roles)
+        print(r)
+        await autoassign(ctx, col, r, csv_name)
 
-bot.run(os.getenv('peep'))
+
+bot.run(os.environ['TOKEN'])
