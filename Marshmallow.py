@@ -3,17 +3,25 @@ import pandas as pd
 import discord
 from discord.ext import commands
 
-# setting bot permissions
+############################################
+# Bot Intialization
+############################################
+# permissions
 intents = discord.Intents.all()
 
-# creating bot instance
+# bot instance
 bot = commands.Bot(command_prefix='/', intents=intents)
 
-# logs whether bot has successfully connected
+# bot connection message
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
 
+############################################
+# Events
+############################################
+
+############################################
 @bot.event
 async def on_member_join(member):
     await member.send("""Hello Soon-to-be SIFPeep!
@@ -24,12 +32,18 @@ right-click or tap on your user profile on the right side and edit
 your server profile. There'll be a nickname field you can type in.
 """)
 
-# Commands
+
+############################################
+# Commands 
+############################################
+
+############################################
 @bot.command(pass_context=True)
 async def peep(ctx):
     """Marshmallow responds with peep!"""
     await ctx.send("peep!")
 
+############################################
 @bot.command(pass_context=True)
 @commands.has_any_role("SIFP Discord Admin", "Tech PAI-CA")
 async def autoassign(ctx, spreadsheet_role: str, discord_role: discord.Role, csv_name: str):
@@ -72,7 +86,7 @@ People in the Discord: {len(ctx.guild.members)}
 ```
 """)
 
-
+############################################
 @bot.command(pass_context=True)
 @commands.has_any_role("SIFP Discord Admin", "Tech PAI-CA")
 async def missing(ctx, column_name: str, csv_name: str):
@@ -102,7 +116,9 @@ Not Found: {not_found}
 People in the Discord: {len(ctx.guild.members)}
 ```
 """)
-    
+
+
+############################################
 @bot.command(pass_context=True)
 @commands.has_any_role("SIFP Discord Admin", "Tech PAI-CA")
 async def assigngroups(ctx, csv_name: str):
