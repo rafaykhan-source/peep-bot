@@ -66,7 +66,10 @@ async def autoassign(ctx, column_name: str, discord_role: discord.Role, csv_name
 
     already = found = not_found = 0
     for n in names:
-        m = discord.utils.find(lambda m: n.lower() in m.display_name.lower(),
+        n_comp1 = n.lower()
+        n_comp2 = n.lower().replace(" ", "")
+        m = discord.utils.find(lambda m: n_comp1 in m.display_name.lower() 
+                               or n_comp2 in m.display_name.lower(),
                                ctx.guild.members)
         if m == None: 
           print(f"could NOT find {n}")
@@ -104,7 +107,10 @@ async def missing(ctx, column_name: str, csv_name: str):
 
     found = not_found = 0
     for n in names:
-        m = discord.utils.find(lambda m: n.lower() in m.display_name.lower(),
+        n_comp1 = n.lower()
+        n_comp2 = n.lower().replace(" ", "")
+        m = discord.utils.find(lambda m: n_comp1 in m.display_name.lower() 
+                               or n_comp2 in m.display_name.lower(),
                                ctx.guild.members)
         if m == None: 
             await ctx.send(f"Not found: {n}")
@@ -155,7 +161,10 @@ async def mentor_group_missing(ctx, column_name: str, names: pd.Series):
 """)
     found = not_found = 0
     for n in names:
-        m = discord.utils.find(lambda m: n.lower() in m.display_name.lower(),
+        n_comp1 = n.lower()
+        n_comp2 = n.lower().replace(" ", "")
+        m = discord.utils.find(lambda m: n_comp1 in m.display_name.lower() 
+                               or n_comp2 in m.display_name.lower(),
                                ctx.guild.members)
         if m == None: 
             await ctx.send(f"Not found: {n}")
@@ -164,6 +173,7 @@ async def mentor_group_missing(ctx, column_name: str, names: pd.Series):
     await ctx.send(f"""
 *Finished {column_name} User Search.*
 ```
+---User Search Report---
 Found: {found}
 Not Found: {not_found}
 People in {column_name}: {len(names)}
@@ -177,7 +187,10 @@ async def mentor_group_autoassign(ctx, column_name: str, discord_role: discord.R
 """)
     already = found = not_found = 0
     for n in names:
-        m = discord.utils.find(lambda m: n.lower() in m.display_name.lower(),
+        n_comp1 = n.lower()
+        n_comp2 = n.lower().replace(" ", "")
+        m = discord.utils.find(lambda m: n_comp1 in m.display_name.lower() 
+                               or n_comp2 in m.display_name.lower(),
                                ctx.guild.members)
         if m == None:
           not_found += 1
@@ -193,6 +206,7 @@ async def mentor_group_autoassign(ctx, column_name: str, discord_role: discord.R
     await ctx.send(f"""
 *Finished {column_name} Role Assignments.*
 ```
+---Role Assignment Report---
 People Assigned {column_name} Role: {found}
 Already Had Role: {already}
 People Not Found: {not_found}
