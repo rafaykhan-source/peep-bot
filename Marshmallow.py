@@ -67,7 +67,7 @@ async def autoassign(ctx, column_name: str, discord_role: discord.Role, csv_name
     already = found = not_found = 0
     for n in names:
         n_comp1 = n.lower()
-        n_comp2 = n.lower().replace(" ", "")
+        n_comp2 = n_comp1.replace(" ", "")
         m = discord.utils.find(lambda m: n_comp1 in m.display_name.lower() 
                                or n_comp2 in m.display_name.lower(),
                                ctx.guild.members)
@@ -108,7 +108,7 @@ async def missing(ctx, column_name: str, csv_name: str):
     found = not_found = 0
     for n in names:
         n_comp1 = n.lower()
-        n_comp2 = n.lower().replace(" ", "")
+        n_comp2 = n_comp1.replace(" ", "")
         m = discord.utils.find(lambda m: n_comp1 in m.display_name.lower() 
                                or n_comp2 in m.display_name.lower(),
                                ctx.guild.members)
@@ -162,7 +162,7 @@ async def mentor_group_missing(ctx, column_name: str, names: pd.Series):
     found = not_found = 0
     for n in names:
         n_comp1 = n.lower()
-        n_comp2 = n.lower().replace(" ", "")
+        n_comp2 = n_comp1.replace(" ", "")
         m = discord.utils.find(lambda m: n_comp1 in m.display_name.lower() 
                                or n_comp2 in m.display_name.lower(),
                                ctx.guild.members)
@@ -188,7 +188,7 @@ async def mentor_group_autoassign(ctx, column_name: str, discord_role: discord.R
     already = found = not_found = 0
     for n in names:
         n_comp1 = n.lower()
-        n_comp2 = n.lower().replace(" ", "")
+        n_comp2 = n_comp1.replace(" ", "")
         m = discord.utils.find(lambda m: n_comp1 in m.display_name.lower() 
                                or n_comp2 in m.display_name.lower(),
                                ctx.guild.members)
