@@ -35,7 +35,6 @@ right-click or tap on your user profile on the right side and edit
 your server profile. There'll be a nickname field you can type in.
 """)
 
-
 ############################################
 # Commands 
 ############################################
@@ -45,119 +44,45 @@ your server profile. There'll be a nickname field you can type in.
 async def peep(ctx):
     """Marshmallow responds with peep!"""
     await ctx.send("peep!")
-
-############################################
-@bot.command(pass_context=True)
-@commands.has_any_role("SIFP Discord Admin", "Tech PAI-CA")
-async def autoassign(ctx, column_name: str, discord_role: discord.Role, csv_name: str):
-    """Autoassigns students under spreadsheet column desired role"""
-    if discord_role == None:
-        await ctx.send("no such discord role exists")
-        return
     
-    df = pd.read_csv(csv_name)
-    
-    try:
-        names = df[column_name].dropna().astype(str)
-        print(names)
-    except:
-        await ctx.send("no such spreadsheet column exists")
-        return
-
-    already = found = not_found = 0
-    for n in names:
-        n_comp1 = n.lower()
-        n_comp2 = n_comp1.replace(" ", "")
-        m = discord.utils.find(lambda m: n_comp1 in m.display_name.lower() 
-                               or n_comp2 in m.display_name.lower(),
-                               ctx.guild.members)
-        if m == None: 
-          print(f"could NOT find {n}")
-          not_found += 1
-        elif discord_role in m.roles:
-          print(f"{m.display_name} ALREADY has {discord_role}")
-          already += 1
-          found += 1
-        else:
-          await m.add_roles(discord_role)
-          await ctx.send(f"{m.display_name} was ASSIGNED {discord_role}")
-          found += 1 
-    await ctx.send(f"""
-```
-Done.
-Found: {found}
-Not Found: {not_found}
-Already Had Role: {already}
-People in the Discord: {len(ctx.guild.members)}
-```
-""")
-
 ############################################
 @bot.command(pass_context=True)
 @commands.has_any_role("SIFP Discord Admin", "Tech PAI-CA")
-async def missing(ctx, column_name: str, csv_name: str):
-    """Identifies students missing from discord based on spreadsheet column"""
-    df = pd.read_csv(csv_name)
-    try:
-        names = df[column_name].dropna().astype(str)
-        print(names)
-    except:
-        await ctx.send("no such spreadsheet column exists")
-        return
-
-    found = not_found = 0
-    for n in names:
-        n_comp1 = n.lower()
-        n_comp2 = n_comp1.replace(" ", "")
-        m = discord.utils.find(lambda m: n_comp1 in m.display_name.lower() 
-                               or n_comp2 in m.display_name.lower(),
-                               ctx.guild.members)
-        if m == None: 
-            await ctx.send(f"Not found: {n}")
-            not_found += 1
-        else: found += 1
-    await ctx.send(f"""
-```
-Done.
-Found: {found}
-Not Found: {not_found}
-People in the Discord: {len(ctx.guild.members)}
-```
-""")
-
-############################################
-@bot.command(pass_context=True)
-@commands.has_any_role("SIFP Discord Admin", "Tech PAI-CA")
-async def assigngroups(ctx, csv_name: str):
-    df = pd.read_csv(csv_name)
+async def assign(ctx, csv_name: str):
+    df = pd.read_csv(csv_name, dtype=str)
+    print(df)
     
     for col in df:
-        r = discord.utils.find(lambda r: r.name == str(col), ctx.guild.roles)
-        if r == None:
-            await ctx.send(f"Role corresponding with {str(col)} could not be found.")
+        r = discord.utils.find(lambda r: r.name == col, ctx.guild.roles)
+        if r is None:
+            await ctx.send(f"Role corresponding with {col} could not be found.")
             continue
-        names = isolate_mentor_group(col, df)   
-        await mentor_group_missing(ctx, col, names)
-        await mentor_group_autoassign(ctx, col, r, names)
+        
+        names = clean_column(col, df)
+        await autoassign(ctx, col, r, names)
 
     await ctx.send("Task Completed.")
 
 ############################################
 # HELPER FUNCTIONS
 ############################################
-def isolate_mentor_group(column_name: str, df: pd.DataFrame):
+def clean_column(col_name: str, df: pd.DataFrame):
+    """
+    Provided a series name of the dataframe and the dataframe.
+    Series associated with column is cleaned and casted as a string
+    """
     try:
-        names = df[column_name].dropna().astype(str)
+        names = df[col_name].dropna()
         print(names)
     except:
-        print(f"Spreadsheet column, {column_name}, not found. Moving to next Column.")
+        print(f"Spreadsheet column, {col_name}, not found.")
     
     return names
     
 ############################################
-async def mentor_group_missing(ctx, column_name: str, names: pd.Series):
+async def report_missing(ctx, col_name: str, names: pd.Series):
     await ctx.send(f"""
-*Starting {column_name} User Search.*
+*Starting {col_name} User Search.*
 """)
     found = not_found = 0
     for n in names:
@@ -166,51 +91,55 @@ async def mentor_group_missing(ctx, column_name: str, names: pd.Series):
         m = discord.utils.find(lambda m: n_comp1 in m.display_name.lower() 
                                or n_comp2 in m.display_name.lower(),
                                ctx.guild.members)
-        if m == None: 
+        if m is None: 
             await ctx.send(f"Not found: {n}")
             not_found += 1
         else: found += 1
     await ctx.send(f"""
-*Finished {column_name} User Search.*
+*Finished {col_name} User Search.*
 ```
 ---User Search Report---
 Found: {found}
 Not Found: {not_found}
-People in {column_name}: {len(names)}
+People in {col_name}: {len(names)}
 ```
 """)
     
 ############################################ 
-async def mentor_group_autoassign(ctx, column_name: str, discord_role: discord.Role, names: pd.Series):
+async def autoassign(ctx, col_name: str, role: discord.Role, names: pd.Series):
     await ctx.send(f"""
-*Starting {column_name} Role Assignments.*
+*Starting {col_name} Role Assignments.*
 """)
-    already = found = not_found = 0
+    already = found = 0
+    not_found = []
     for n in names:
         n_comp1 = n.lower()
         n_comp2 = n_comp1.replace(" ", "")
         m = discord.utils.find(lambda m: n_comp1 in m.display_name.lower() 
                                or n_comp2 in m.display_name.lower(),
                                ctx.guild.members)
-        if m == None:
-          not_found += 1
-        elif discord_role in m.roles:
-          print(f"{m.display_name} ALREADY has {discord_role}")
+        if m is None:
+          not_found.append(n)
+        elif role in m.roles:
+          print(f"{m.display_name} ALREADY has {role}")
           already += 1
           found += 1
         else:
-          await m.add_roles(discord_role)
-          await ctx.send(f"{m.display_name} was ASSIGNED {discord_role}")
+          await m.add_roles(role)
+          await ctx.send(f"{m.display_name} was ASSIGNED {role}")
           found += 1 
     
+    if len(not_found) > 0:
+        await ctx.send("People Not Found:")
+        await ctx.send("\n".join(not_found))
     await ctx.send(f"""
-*Finished {column_name} Role Assignments.*
+*Finished {col_name} Role Assignments.*
 ```
 ---Role Assignment Report---
-People Assigned {column_name} Role: {found}
+People Assigned {col_name} Role: {found}
 Already Had Role: {already}
-People Not Found: {not_found}
-People in {column_name}: {len(names)}
+People Not Found: {len(not_found)}
+People in {col_name}: {len(names)}
 ```
 """)
 
