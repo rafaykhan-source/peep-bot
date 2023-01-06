@@ -14,7 +14,7 @@ intents = discord.Intents.all()
 # bot instance
 bot = commands.Bot(command_prefix='/', intents=intents)
 
-# loading up moderation data
+# loading up database
 data = open('messages.json')
 db = json.load(data)
 data.close()
@@ -46,55 +46,58 @@ async def peep(ctx):
 ############################################
 @bot.command(pass_context=True)
 @commands.has_any_role("SIFP Discord Admin", "Tech PAI-CA")
-async def assign(ctx, csv_name: str):
-    df = pd.read_csv(csv_name, dtype=str)
-    print(df)
+async def assign(ctx):
+    groups = pp.get_role_data()
     
-    for col in df:
-        r = discord.utils.find(lambda r: r.name == col, ctx.guild.roles)
+    for i, group in groups.iteritems():
+        r = discord.utils.find(lambda r: r.name == group, ctx.guild.roles)
         if r is None:
-            await ctx.send(f"Role corresponding with {col} could not be found.")
+            await ctx.send(f"Role corresponding with {group} could not be found.")
             continue
         
-        names = clean_column(col, df)
-        await autoassign(ctx, col, r, names)
-
+    await autoassign(ctx)
     await ctx.send("Task Completed.")
     
 ############################################ 
-async def autoassign(ctx, col_name: str, role: discord.Role, names: pd.Series):
+async def autoassign(ctx):
     await ctx.send(f"""
-*Starting {col_name} Role Assignments.*
+*Starting Role Assignments.*
 """)
     mentees = pp.get_mentee_data()
     already = found = 0
     not_found = []
-    for index, mentee in mentees.iterrows():
-        m = discord.utils.find(lambda m: mentee['clean_name'] in pp.clean_name(m.display_name),
+    for index, row in mentees.iterrows():
+        role = row['group_role']
+        name = row['mentee']
+        c_name = row['clean_name']
+        m = discord.utils.find(lambda m: c_name in pp.clean_name(m.display_name),
                                ctx.guild.members)
         if m is None:
-          not_found.append(mentee['mentee'])
-        elif role in m.roles:
+          not_found.append((name, role))
+          continue
+      
+        if role in m.roles:
           print(f"{m.display_name} ALREADY has {role}")
           already += 1
           found += 1
         else:
           await m.add_roles(role)
-          await ctx.send(f"{m.display_name} was ASSIGNED {role}")
+          await ctx.send(f"{m.display_name} was newly ASSIGNED {role}")
           found += 1 
-    
-    if len(not_found) > 0:
-        await ctx.send("People Not Found:")
+        
+    if len(not_found):
+        await ctx.send("Not Found:")
         await ctx.send("\n".join(not_found))
+        
     await ctx.send(f"""
-*Finished {col_name} Role Assignments.*
+*Finished Role Assignments.*
 ```
----Role Assignment Report---
-People Assigned {col_name} Role: {found}
-Already Had Role: {already}
-People Not Found: {len(not_found)}
-People in {col_name}: {len(names)}
+---Assignment Report---
+People Found: {found}
+People Already With Role: {already}
+People Not Found: {len(not_found)/2}
 ```
 """)
 
 bot.run(config.TOKEN)
+

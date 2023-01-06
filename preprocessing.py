@@ -20,6 +20,7 @@ def get_raw_data() -> pd.DataFrame:
        pd.DataFrame: raw spreadsheet data.
    """
    raw = pd.read_csv("people.csv", header=1)
+   raw = raw.rename(columns={'Group #':'group_num', 'Mentor Name':'mentor_name'})
    return raw
 
 
@@ -36,7 +37,6 @@ def get_mentee_data() -> pd.DataFrame:
    people["group_role"] = "Fall Mentorship Group " + people["Group #"].astype(str)
    people = people.reset_index(drop=True)
    people = people.drop(columns=["Mentee Names"])
-   people = people.rename(columns={'Group #':'group_num', 'Mentor Name':'mentor_name'})
    people['clean_name'] = people["mentee"].apply(clean_name)
    people.groupby(by=["group_num"])
    people["group_num"] = people["group_num"].astype(int)
@@ -60,7 +60,15 @@ def get_mentor_data() -> pd.DataFrame:
    
    return mentors
 
+def get_role_data() -> pd.Series:
+   """Obtains role data.
 
-print(get_mentee_data())
-
-print(get_mentor_data())
+   Returns:
+       pd.Series: role data.
+   """
+   raw = get_raw_data()
+   groups = raw['group_num'].drop_duplicates()
+   groups.loc[groups == "NEW"] = 37
+   roles = "Fall Mentorship Group " + groups.astype(str)
+   
+   return roles
