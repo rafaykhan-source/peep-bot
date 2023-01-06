@@ -1,10 +1,8 @@
-import os
-from dotenv import load_dotenv
+import config
+import preprocessing as pp
 import pandas as pd
 import discord
 from discord.ext import commands
-
-load_dotenv()
 
 ############################################
 # Bot Intialization
@@ -86,10 +84,8 @@ async def report_missing(ctx, col_name: str, names: pd.Series):
 """)
     found = not_found = 0
     for n in names:
-        n_comp1 = n.lower()
-        n_comp2 = n_comp1.replace(" ", "")
-        m = discord.utils.find(lambda m: n_comp1 in m.display_name.lower() 
-                               or n_comp2 in m.display_name.lower(),
+        n = pp.clean_name(n)
+        m = discord.utils.find(lambda m: n in pp.clean_name(m.display_name),
                                ctx.guild.members)
         if m is None: 
             await ctx.send(f"Not found: {n}")
@@ -113,10 +109,8 @@ async def autoassign(ctx, col_name: str, role: discord.Role, names: pd.Series):
     already = found = 0
     not_found = []
     for n in names:
-        n_comp1 = n.lower()
-        n_comp2 = n_comp1.replace(" ", "")
-        m = discord.utils.find(lambda m: n_comp1 in m.display_name.lower() 
-                               or n_comp2 in m.display_name.lower(),
+        nclean = pp.clean_name(n)
+        m = discord.utils.find(lambda m: nclean in pp.clean_name(m.display_name),
                                ctx.guild.members)
         if m is None:
           not_found.append(n)
@@ -143,4 +137,4 @@ People in {col_name}: {len(names)}
 ```
 """)
 
-bot.run(os.environ['TOKEN'])
+bot.run(config.TOKEN)
