@@ -32,11 +32,15 @@ def get_mentee_data() -> pd.DataFrame:
    raw = get_raw_data()
    people = raw[['Group #', 'Mentor Name', 'Mentee Names']]
    people["Group #"].loc[people["Group #"] == "NEW"] = 37
-   people = people.assign(mentees=people["Mentee Names"].str.split(',')).explode('mentees')
+   people = people.assign(mentee=people["Mentee Names"].str.split(',')).explode('mentee')
    people["group_role"] = "Fall Mentorship Group " + people["Group #"].astype(str)
    people = people.reset_index(drop=True)
    people = people.drop(columns=["Mentee Names"])
-   people['clean_name'] = people["mentees"].apply(clean_name)
+   people = people.rename(columns={'Group #':'group_num', 'Mentor Name':'mentor_name'})
+   people['clean_name'] = people["mentee"].apply(clean_name)
+   people.groupby(by=["group_num"])
+   people["group_num"] = people["group_num"].astype(int)
+   people = people.sort_values(by=['group_num'])
 
    return people
 
@@ -45,7 +49,7 @@ def get_mentor_data() -> pd.DataFrame:
    """Obtains mentor data.
 
    Returns:
-       pd.DataFrame: Mentee group data.
+       pd.DataFrame: Mentor data.
    """
    raw = get_raw_data()
    mentors = raw[['Group #', 'Mentor Name']]
@@ -55,3 +59,8 @@ def get_mentor_data() -> pd.DataFrame:
    mentors['clean_name'] = mentors['mentor_name'].apply(clean_name)
    
    return mentors
+
+
+print(get_mentee_data())
+
+print(get_mentor_data())

@@ -1,4 +1,5 @@
 import config
+import json
 import preprocessing as pp
 import pandas as pd
 import discord
@@ -13,6 +14,11 @@ intents = discord.Intents.all()
 # bot instance
 bot = commands.Bot(command_prefix='/', intents=intents)
 
+# loading up moderation data
+data = open('messages.json')
+db = json.load(data)
+data.close()
+
 # bot connection message
 @bot.event
 async def on_ready():
@@ -25,13 +31,7 @@ async def on_ready():
 ############################################
 @bot.event
 async def on_member_join(member):
-    await member.send("""Hello Soon-to-be SIFPeep!
-Nicknames must be set to your real first and last name. 
-After all, we have to know who you are and who we're talking to! 
-You will not be approved if we can't ID you. To change your nickname, 
-right-click or tap on your user profile on the right side and edit 
-your server profile. There'll be a nickname field you can type in.
-""")
+    await member.send(db['welcomeMsg'])
 
 ############################################
 # Commands 
@@ -60,60 +60,20 @@ async def assign(ctx, csv_name: str):
         await autoassign(ctx, col, r, names)
 
     await ctx.send("Task Completed.")
-
-############################################
-# HELPER FUNCTIONS
-############################################
-def clean_column(col_name: str, df: pd.DataFrame):
-    """
-    Provided a series name of the dataframe and the dataframe.
-    Series associated with column is cleaned and casted as a string
-    """
-    try:
-        names = df[col_name].dropna()
-        print(names)
-    except:
-        print(f"Spreadsheet column, {col_name}, not found.")
-    
-    return names
-    
-############################################
-async def report_missing(ctx, col_name: str, names: pd.Series):
-    await ctx.send(f"""
-*Starting {col_name} User Search.*
-""")
-    found = not_found = 0
-    for n in names:
-        n = pp.clean_name(n)
-        m = discord.utils.find(lambda m: n in pp.clean_name(m.display_name),
-                               ctx.guild.members)
-        if m is None: 
-            await ctx.send(f"Not found: {n}")
-            not_found += 1
-        else: found += 1
-    await ctx.send(f"""
-*Finished {col_name} User Search.*
-```
----User Search Report---
-Found: {found}
-Not Found: {not_found}
-People in {col_name}: {len(names)}
-```
-""")
     
 ############################################ 
 async def autoassign(ctx, col_name: str, role: discord.Role, names: pd.Series):
     await ctx.send(f"""
 *Starting {col_name} Role Assignments.*
 """)
+    mentees = pp.get_mentee_data()
     already = found = 0
     not_found = []
-    for n in names:
-        nclean = pp.clean_name(n)
-        m = discord.utils.find(lambda m: nclean in pp.clean_name(m.display_name),
+    for index, mentee in mentees.iterrows():
+        m = discord.utils.find(lambda m: mentee['clean_name'] in pp.clean_name(m.display_name),
                                ctx.guild.members)
         if m is None:
-          not_found.append(n)
+          not_found.append(mentee['mentee'])
         elif role in m.roles:
           print(f"{m.display_name} ALREADY has {role}")
           already += 1
